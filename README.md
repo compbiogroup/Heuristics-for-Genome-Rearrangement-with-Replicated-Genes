@@ -1,6 +1,6 @@
 # Heuristics for Genome Rearrangement with Replicated Genes
 
-A collection of heuristics to find rearrangement distances between genomes with replicated genes.
+A collection of heuristics to find rearrangement distances between genomes with multiple genes.
 
 ## Dependencies
 
@@ -11,9 +11,9 @@ A collection of heuristics to find rearrangement distances between genomes with 
 ## Execution
 
 To build the aplication just run the folowing command on the root:
-#+begin_src sh
+```bash
 stack build
-#+end_src
+```
 
 This aplication has 3 diferent executables:
 - HeurGRDG: the heuristics to solve rearrangement programs

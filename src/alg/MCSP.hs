@@ -54,22 +54,21 @@ mcspSOAR com = contractedInst . mcspSOARWithBreak com
 
 mcspSOARWithBreak :: forall inst g a a' mod. (I.ReaInstAll inst g a a' mod) => Soar -> inst -> ContractedInstance
 mcspSOARWithBreak (Soar Ap3 useComb) inst =
-    if useComb
-        then undefined
-        else if not (I.onlyDup inst)
-                then throw $ ReplicationPresentError "soar"
-                else mcspSOAR' (Proxy @PMGraph3) inst
-mcspSOARWithBreak (Soar Ap4 useComb) inst =
-    if useComb
-        then undefined
-        else mcspSOAR' (Proxy @PMGraph4) inst
+    if not (I.onlyDup inst)
+       then throw $ ReplicationPresentError "soar"
+       else mcspSOAR' useComb (Proxy @PMGraph3) inst
+mcspSOARWithBreak (Soar Ap4 useComb) inst = mcspSOAR' useComb (Proxy @PMGraph4) inst
 
-mcspSOAR' :: (I.ReaInstAll inst g a a' mod, PMGraph pmg mod) => Proxy pmg -> inst -> ContractedInstance
-mcspSOAR' proxyP inst = ContInst conInst bps
+mcspSOAR' :: (I.ReaInstAll inst g a a' mod, PMGraph pmg mod) => Bool -> Proxy pmg -> inst -> ContractedInstance
+mcspSOAR' useComb proxyP inst =
+    if useComb
+       then combine inst (breaks2Strips l1 l2 bps)
+       else ContInst conInst bps
     where
       graph = makePMGraph proxyP inst
       bps = getBPFromIS inst (getPM graph) $ independentSet graph
       conInst = SoarAux.contractedRepresentation bps False inst
+      (l1,l2,_,_,_) = I.unwrapInstanceAsLists inst
 
 data IdxEl a = IdxEl
     { ipos :: Int

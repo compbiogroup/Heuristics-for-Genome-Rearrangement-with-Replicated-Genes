@@ -66,7 +66,7 @@ findDistance force_limit bs_genomes_ pd (isSign', model, any_com, createTotal, o
     mcspArgs = let variation = case (isSign',model) of
                                  (Signed,Rev) -> MCSP.Signed
                                  (Unsigned,Rev) -> MCSP.Reverse
-                                 (Unsigned,Trans) -> MCSP.Std
+                                 (Unsigned,Trans) -> MCSP.Direct
                                  (Signed,Trans) -> throw (GenomesWithSign "findDistance")
                                  (Signed,TransRev) -> MCSP.Signed
                                  (Unsigned,TransRev) -> MCSP.Reverse

@@ -5,7 +5,7 @@ module ArgsMCSP where
 ------------------------------------------------------
 import Types
 ------------------------------------------------------
-import Options.Applicative (Parser, ParserInfo, option, auto, long, short, metavar, help, value, showDefault, switch, subparser, command, info, (<**>), helper, progDesc, strOption, fullDesc, execParser)
+import Options.Applicative (Parser, ParserInfo, option, auto, long, short, metavar, help, value, showDefault, switch, subparser, command, info, (<**>), helper, progDesc, strOption, fullDesc, execParser, commandGroup)
 import Control.Monad.IO.Class (MonadIO, liftIO)
 ------------------------------------------------------
 
@@ -16,7 +16,7 @@ opts = info (argParser <**> helper)
 
 data Commands = P0 ID | P1 Soar | P2 HS | P3 Combine | P4 Greedy
 
-data Variation = Std | Reverse | Signed deriving (Show, Read)
+data Variation = Direct | Reverse | Signed deriving (Show, Read)
 
 data ID = ID
 data Soar = Soar
@@ -32,14 +32,14 @@ data Greedy = Greedy
     } deriving (Eq)
 
 data ArgsRaw = ArgsRaw
-  { raw_com :: Commands
-  , raw_variation :: Variation
+  { raw_variation :: Variation
   , raw_input :: String
   , raw_output :: String
   , raw_onlyDup :: Bool
   , raw_useAss :: Bool
   , raw_noPar :: Bool
   , raw_singleLine :: Bool
+  , raw_com :: Commands
   }
 
 type MCSPArgs = (Variation, Commands, Bool, Bool)
@@ -83,7 +83,9 @@ greedyParser = Greedy
 
 mcspParser :: Parser Commands
 mcspParser =  subparser $
-          ( command "ID" (info
+          commandGroup "MCSP_ALGO: Algorithm to use for MCSP"
+          <> metavar "MCSP_ALGO"
+          <> command "ID" (info
                            (P0 <$> idParser <**> helper)
                            (progDesc "No partition."))
           <> command "Soar" (info
@@ -97,18 +99,17 @@ mcspParser =  subparser $
                            (progDesc "Use Combine algoritm."))
           <> command "Greedy" (info
                            (P4 <$> greedyParser <**> helper)
-                           (progDesc "Use Greedy algoritm.")))
+                           (progDesc "Use Greedy algoritm."))
 
 argParser :: Parser ArgsRaw
 argParser = ArgsRaw
-      <$> mcspParser
-      <*> option auto
+      <$> option auto
           ( long "variation"
          <> short 'v'
          <> metavar "VAR"
          <> showDefault
-         <> value Std
-         <> help "Variation of the problem to consider.")
+         <> value Direct
+         <> help "Variation of the problem to consider. One of Direct, Reverse or Signed.")
       <*> strOption
           ( long "input"
          <> short 'i'
@@ -122,17 +123,18 @@ argParser = ArgsRaw
       <*> switch
           ( long "dup"
          <> short 'd'
-         <> help "Genome has only duplicated Genes of Replicated Genes." )
+         <> help "Genome has only duplicated Genes. Use this option to improve efficiency if you know that no gene has more than two copies" )
       <*> switch
           ( long "ass"
          <> short 'a'
-         <> help "Use the initial assigments." )
+         <> help "Use the initial assignments. May improve the result if many replicated genes are present." )
       <*> switch
           ( long "no-par"
          <> help "Do not process the genomes in parallel.")
       <*> switch
           ( long "single-line"
          <> help "Target genome is the identity.")
+      <*> mcspParser
 
 getArgs :: (MonadIO mon) => mon ArgsRaw
 getArgs = liftIO $ execParser opts

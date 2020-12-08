@@ -18,7 +18,7 @@ import qualified ArgsMCSP as MCSP
 
 -- Returns Signed if the simplified genome will be signed or Unsigned otherwise
 partitionIsSigned :: MCSPArgs -> IsSign
-partitionIsSigned (MCSP.Std, _, _, _) = Unsigned
+partitionIsSigned (MCSP.Direct, _, _, _) = Unsigned
 partitionIsSigned (MCSP.Reverse, (P0 _), _, _) = Unsigned
 partitionIsSigned (MCSP.Reverse, _, _, _) = Signed
 partitionIsSigned (MCSP.Signed, _, _, _) = Signed
@@ -34,7 +34,7 @@ simplifyGenomes :: (ByteString, ByteString) -> MCSPArgs -> (ByteString, ByteStri
 simplifyGenomes bs_genomes (_, (P0 _), _, False) = bs_genomes
 simplifyGenomes bs_genomes (variation, any_com, onlyDup, useAss) =
   case variation of
-    MCSP.Std -> simplifyGenomes_ Signed Trans (Proxy @SGene)
+    MCSP.Direct -> simplifyGenomes_ Signed Trans (Proxy @SGene)
     MCSP.Reverse -> simplifyGenomes_ Signed Rev (Proxy @SGene)
     MCSP.Signed -> simplifyGenomes_ Unsigned Rev (Proxy @UGene)
   where

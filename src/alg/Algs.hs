@@ -15,7 +15,6 @@ import MappingRep (MapOfRep, makeGeneratorRep)
 import qualified Instance as I
 import qualified ArgsMCSP as MCSP
 --------------------------------------------------
-import Debug.Trace
 
 hittingSet :: forall mon. (MonadDist mon) => HS -> (I.AnyInstance, PermData) -> mon Dist
 hittingSet HS (I.AnyInstance inst,pd) = do
@@ -30,7 +29,7 @@ soar (Soar aprox noHeu useMap) (inst, pd) = findDistancePerm pd n perm1 perm2
       (perm1,perm2,n) = soarPermCustom (mcspSOARWithBreak (MCSP.Soar aprox False)) useMap inst'
 
 cycleDec :: (MonadDist mon) => Cycle -> (I.AnyInstance, PermData) -> mon Dist
-cycleDec Cycle (I.AnyInstance inst, pd) = traceShow (I.describe inst) $ findDistancePerm pd n perm1 perm2
+cycleDec Cycle (I.AnyInstance inst, pd) = findDistancePerm pd n perm1 perm2
     where
         (perm1,perm2,n) = I.unwrapInstanceAsPerms $ cicleDecomposition inst
 

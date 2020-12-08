@@ -5,7 +5,7 @@ module Args where
 ------------------------------------------------------
 import Types
 ------------------------------------------------------
-import Options.Applicative (Parser, ParserInfo, option, auto, long, short, metavar, help, value, showDefault, switch, subparser, command, info, (<**>), helper, progDesc, strOption, fullDesc, execParser, (<|>))
+import Options.Applicative (Parser, ParserInfo, option, auto, long, short, metavar, help, value, showDefault, switch, subparser, command, info, (<**>), helper, progDesc, strOption, fullDesc, execParser, (<|>), commandGroup)
 import Control.Exception.Base (throw)
 import Control.Monad.IO.Class (MonadIO, liftIO)
 ------------------------------------------------------
@@ -102,9 +102,7 @@ data InitialMap = WithCycle | WithSoar | WithRand deriving (Read, Show)
 ---------------------- HeurGRDG --------------------------
 
 data ArgsRaw = ArgsRaw
-  { raw_com :: Commands
-  , raw_mcspCom :: MCSP.Commands
-  , raw_permId :: Int
+  { raw_permId :: Int
   , raw_permProg :: String
   , raw_reMod :: RearrangeModel
   , raw_isSign :: Bool
@@ -118,6 +116,8 @@ data ArgsRaw = ArgsRaw
   , raw_withMap :: InitialMap
   , raw_contNei :: Bool
   , raw_useAss :: Bool
+  , raw_com :: Commands
+  , raw_mcspCom :: MCSP.Commands
   }
 
 type DistArgs = (IsSign, RearrangeModel, Commands, Int, Bool, InitialMap, Bool, Bool, MCSP.Commands)
@@ -401,7 +401,9 @@ genBPParser = GenBP
 
 mhParser :: Parser MapHeur
 mhParser = subparser $
-             command "Map" (info
+          commandGroup "MAP_ALGO: Maps based metaheuristics to find rearrangement distances considering multiple genes"
+          <> metavar "MAP_ALGO"
+          <>  command "Map" (info
                            (A2 <$> mapParser <**> helper)
                            (progDesc "Heuristic of Random Mappings"))
           <> command "Local" (info
@@ -436,8 +438,10 @@ mhParser = subparser $
                            (progDesc "Heuristic of Separation combined with others"))
 
 sdParser :: Parser SingleDist
-sdParser =  subparser $
-             command "PermDist" (info
+sdParser = subparser $
+          commandGroup "OTHER_ALGO: Other Algorithms to find rearrangement distances"
+          <> metavar "OTHER_ALGO"
+          <> command "PermDist" (info
                            (A0 <$> permParser <**> helper)
                            (progDesc "Distance between permutations"))
           <> command "Ext" (info
@@ -458,9 +462,7 @@ sdParser =  subparser $
 
 argParser :: Parser ArgsRaw
 argParser = ArgsRaw
-      <$> ( (MH <$> mhParser) <|> (SD <$> sdParser))
-      <*> MCSP.mcspParser
-      <*> option auto
+      <$> option auto
           ( long "pid"
          <> short 'c'
          <> metavar "P_ID"
@@ -479,17 +481,17 @@ argParser = ArgsRaw
          <> metavar "EVENT"
          <> showDefault
          <> value Rev
-         <> help "Rearrangement model to consider.")
+         <> help "Rearrangement model to consider. One of Rev, Trans or TransRev.")
       <*> switch
           ( long "sign"
          <> short 's'
-         <> help "Consider the Genomes sign.")
+         <> help "Consider the Genomes signed.")
       <*> option auto
           ( long "mappings"
          <> short 'm'
          <> metavar "REP"
          <> showDefault
-         <> value 1
+         <> value 100
          <> help "Total number of mappings to create." )
       <*> strOption
           ( long "input"
@@ -504,7 +506,7 @@ argParser = ArgsRaw
       <*> switch
           ( long "dup"
          <> short 'd'
-         <> help "Genome has only duplicated Genes of Replicated Genes." )
+         <> help "Genome has only duplicated Genes. Use this option to improve efficiency if you know that no gene has more than two copies" )
       <*> switch
           ( long "min"
          <> help "When using maps returns the minimum instead off all values.")
@@ -513,22 +515,24 @@ argParser = ArgsRaw
          <> help "Do not process the genomes in parallel.")
       <*> switch
           ( long "single-line"
-         <> help "Target genome is the identity.")
+         <> help "Target genome is the identity. Useful when sorting permutations.")
       <*> option auto
           ( long "with-map"
          <> value WithRand
-         <> help "Use cycle decomposition or soar to get initial map.")
+         <> help "Use cycle decomposition or soar to get initial map. Recommended if there are genes with many copies.")
       <*> switch
           ( long "cont-neig"
-         <> help "Use new definiton of neighbors.")
+         <> help "Use alternative definition of neighbors.")
       <*> switch
           ( long "ass"
-         <> help "Use the initial assigments." )
+         <> help "Use the initial assignments. May improve the result if many replicated genes are present." )
+      <*> ( (MH <$> mhParser) <|> (SD <$> sdParser))
+      <*> MCSP.mcspParser
 
 opts :: ParserInfo ArgsRaw
 opts = info (argParser <**> helper)
       ( fullDesc
-      <> progDesc "Heuristics for rearrangement distance with duplicated genes.")
+      <> progDesc "Heuristics for rearrangement distance with replicated genes.")
 
 getArgs :: (MonadIO mon) => mon ArgsRaw
 getArgs = liftIO $ execParser opts
